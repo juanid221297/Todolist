@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify
-import language_tool_python
+from gramformer import Gramformer
 
 app = Flask(__name__)
-tool = language_tool_python.LanguageTool('en-US')
+gf = Gramformer(models=1)  # 1 for grammar correction model
 
 @app.route('/check_grammar', methods=['POST'])
 def check_grammar():
@@ -10,20 +10,17 @@ def check_grammar():
     sentence = data.get("sentence", "")
     if not sentence:
         return jsonify({"error": "No sentence provided"}), 400
-    
-    matches = tool.check(sentence)
-    if not matches:
+
+    corrected_sentences = gf.correct(sentence, max_candidates=1)
+    corrected_sentence = corrected_sentences[0] if corrected_sentences else sentence
+
+    if corrected_sentence == sentence:
         return jsonify({"message": "Your sentence is correct!"})
     
-    errors = []
-    for match in matches:
-        errors.append({
-            "issue": match.message,
-            "suggestion": match.replacements,
-            "context": match.context
-        })
-    
-    return jsonify({"errors": errors})
+    return jsonify({
+        "original": sentence,
+        "corrected": corrected_sentence
+    })
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
