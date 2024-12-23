@@ -12,5 +12,3 @@ zipp==3.10.0
 torch==2.0.1
 torchvision==0.15.2  # Optional if required for your application
 transformers>=4.0.0
-gramformer
-
