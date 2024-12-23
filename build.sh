@@ -1,15 +1,13 @@
 #!/bin/bash
 
-# Update and install OpenJDK
-apt-get update
-apt-get install -y openjdk-11-jdk
+# Update package lists
+apt-get update -y
 
-# Set JAVA_HOME and add Java to the PATH
-export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-export PATH=$JAVA_HOME/bin:$PATH
-
-# Verify Java installation
-java -version
-
-# Proceed with installing Python dependencies
+# Install Python dependencies
 pip install -r requirements.txt
+pip install git+https://github.com/PrithivirajDamodaran/Gramformer.git
+# Verify successful installation
+python -m pip show gramformer
+
+# Print message indicating setup is complete
+echo "Setup complete. Dependencies installed."
