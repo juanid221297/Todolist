@@ -1,23 +1,8 @@
-function addTodo() {
-    const todoInput = document.getElementById('todo-input');
-    const todoText = todoInput.value.trim();
-  
-    if (todoText) {
-      const todoList = document.getElementById('todo-list');
-      const listItem = document.createElement('li');
-  
-      listItem.innerHTML = `
-        ${todoText}
-        <button class="delete-btn" onclick="deleteTodo(this)">Delete</button>
-      `;
-  
-      todoList.appendChild(listItem);
-      todoInput.value = '';
-    }
-  }
-  
-  function deleteTodo(button) {
-    const listItem = button.parentElement;
-    listItem.remove();
-  }
-  
+#!/bin/bash
+
+# Update and install OpenJDK
+apt-get update
+apt-get install -y openjdk-11-jdk
+
+# Proceed with any other necessary setup, such as installing Python dependencies
+pip install -r requirements.txt
