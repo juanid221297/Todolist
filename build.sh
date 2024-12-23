@@ -1,14 +1,15 @@
 #!/bin/bash
 
-# Update package lists
-apt-get update -y
+# Update and install only the required dependencies
+apt-get update
+apt-get install -y openjdk-11-jdk  # Required for language_tool_python
 
-# Install Python dependencies
-pip install -r requirements.txt
-pip install git+https://github.com/PrithivirajDamodaran/Gramformer.git
-python -m spacy download en_core_web_sm
-# Verify successful installation
-python -m pip show gramformer
+# Set JAVA_HOME and add Java to the PATH
+export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+export PATH=$JAVA_HOME/bin:$PATH
 
-# Print message indicating setup is complete
-echo "Setup complete. Dependencies installed."
+# Verify Java installation
+java -version
+
+# Proceed with installing Python dependencies
+pip install --no-cache-dir -r requirements.txt
