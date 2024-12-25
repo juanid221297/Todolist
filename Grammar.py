@@ -6,6 +6,9 @@ import os
 app = Flask(__name__)  # Create the Flask app object
 CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS for all routes
 
+# Load the Gramformer model globally during startup
+gf = Gramformer(models=1)  # Grammar correction model
+
 @app.route('/check_grammar', methods=['POST'])
 def check_grammar():
     try:
@@ -14,8 +17,6 @@ def check_grammar():
         if not sentence:
             return jsonify({"error": "No sentence provided"}), 400
 
-        # Lazy load Gramformer model
-        gf = Gramformer(models=1)  # Initialize model inside the route
         corrected_sentences = gf.correct(sentence, max_candidates=1)
         corrected_sentence = corrected_sentences[0] if corrected_sentences else sentence
 
