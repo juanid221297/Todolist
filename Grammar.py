@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
 from gramformer import Gramformer
 from flask_cors import CORS
+import os
 
 app = Flask(__name__)  # Create the Flask app object
-CORS(app)  # Initialize CORS after the app is created
+CORS(app, resources={r"/check_grammar": {"origins": "*"}})
+
 
 gf = Gramformer(models=1)  # 1 for grammar correction model
 
@@ -26,4 +28,5 @@ def check_grammar():
     })
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Use PORT env variable if available, else default to 5000
+    app.run(host="0.0.0.0", port=port, debug=True)
