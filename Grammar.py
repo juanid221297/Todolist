@@ -9,7 +9,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS for all routes
 # Load the Gramformer model globally during startup
 gf = Gramformer(models=1)  # Grammar correction model
 
-@app.route('/check_grammar', methods=['POST'])
+@app.route('/', methods=['POST'])
 def check_grammar():
     try:
         data = request.json
