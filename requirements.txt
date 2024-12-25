@@ -1,8 +1,8 @@
 Flask>=2.3.0
 flask-cors>=3.1.0
 gunicorn==20.1.0
-language_tool_python>=2.8.0
+language-tool-python>=2.8.0
 torch>=2.0.0
 transformers>=4.0.0
 spacy>=3.0
-gramformer @ git+https://github.com/PrithivirajDamodaran/Gramformer.git
+git+https://github.com/PrithivirajDamodaran/Gramformer.git
