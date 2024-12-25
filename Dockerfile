@@ -22,4 +22,4 @@ COPY . .
 EXPOSE 5000
 
 # Run the application using Gunicorn
-CMD ["gunicorn", "-w", "2", "-t", "300", "-b", "0.0.0.0:5000", "Grammar:app"]
+CMD ["gunicorn", "-w", "2", "-t", "3000", "-b", "0.0.0.0:5000", "Grammar:app"]
