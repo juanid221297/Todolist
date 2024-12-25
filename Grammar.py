@@ -1,10 +1,11 @@
 from flask import Flask, request, jsonify
-from gramformer import Gramformer
 from flask_cors import CORS
+import threading
+import logging
 import os
 import signal
-import logging
 
+# Flask app setup
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
@@ -12,15 +13,22 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load Gramformer model during startup
+# Placeholder for the Gramformer model
 gf = None
-try:
-    logger.info("Loading Gramformer model...")
-    gf = Gramformer(models=1)
-    logger.info("Gramformer model loaded successfully.")
-except Exception as e:
-    logger.error(f"Failed to load Gramformer model: {e}")
-    raise
+
+# Function to load the Gramformer model asynchronously
+def load_model():
+    global gf
+    from gramformer import Gramformer
+    try:
+        logger.info("Loading Gramformer model...")
+        gf = Gramformer(models=1)
+        logger.info("Gramformer model loaded successfully.")
+    except Exception as e:
+        logger.error(f"Failed to load Gramformer model: {e}")
+
+# Load model in a separate thread
+threading.Thread(target=load_model).start()
 
 # Signal handlers for graceful termination
 def handle_exit_signal(signum, frame):
@@ -32,12 +40,15 @@ signal.signal(signal.SIGINT, handle_exit_signal)
 
 @app.route('/', methods=['POST'])
 def check_grammar():
+    if not gf:
+        return jsonify({"error": "Model is still loading. Please try again later."}), 503
+
     try:
         data = request.json
-        sentence = data.get("sentence", "")
-        if not sentence:
+        if not data or "sentence" not in data:
             return jsonify({"error": "No sentence provided"}), 400
-
+        
+        sentence = data["sentence"]
         corrected_sentences = gf.correct(sentence, max_candidates=1)
         corrected_sentence = corrected_sentences[0] if corrected_sentences else sentence
 
