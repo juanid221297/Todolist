@@ -1,27 +1,30 @@
-# Use a lightweight Python 3.11 base image
 FROM python:3.11-slim
 
-# Install system dependencies (Java for Gramformer and others)
+# Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openjdk-11-jre-headless \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Set the working directory in the container
+# Set working directory
 WORKDIR /app
 
 # Copy and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
+RUN pip install gunicorn==20.1.0  # Ensure gunicorn is installed
 
-# Install SpaCy's English language model
+# Debugging step
+RUN gunicorn --version
+RUN ls -la /app
+
+# Install SpaCy language model
 RUN python -m spacy download en_core_web_sm
 
-# Copy the rest of your application code into the container
+# Copy application code
 COPY . .
 
-# Expose the port Flask will run on
+# Expose port
 EXPOSE 5000
 
-# Ensure gunicorn is in PATH and run the app
-CMD ["gunicorn", "Grammar:app", "-b", "0.0.0.0:5000", "-w", "2", "-t", "120"]
+# Run application with Gunicorn
+CMD ["gunicorn", "-w", "2", "-t", "120", "Grammar:app", "-b", "0.0.0.0:5000"]
