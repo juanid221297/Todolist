@@ -1,29 +1,30 @@
 from flask import Flask, request, jsonify
 from gramformer import Gramformer
 from flask_cors import CORS
-from multiprocessing import active_children
-import atexit
 import os
 import signal
+import logging
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Load Gramformer model during startup
-gf = Gramformer(models=1)
-
-# Cleanup function to terminate active child processes
-def cleanup_processes():
-    for process in active_children():
-        process.terminate()
-        process.join()
-
-# Register cleanup function to be called during exit
-atexit.register(cleanup_processes)
+gf = None
+try:
+    logger.info("Loading Gramformer model...")
+    gf = Gramformer(models=1)
+    logger.info("Gramformer model loaded successfully.")
+except Exception as e:
+    logger.error(f"Failed to load Gramformer model: {e}")
+    raise
 
 # Signal handlers for graceful termination
 def handle_exit_signal(signum, frame):
-    cleanup_processes()
+    logger.info("Received termination signal. Exiting gracefully...")
     os._exit(0)
 
 signal.signal(signal.SIGTERM, handle_exit_signal)
@@ -48,9 +49,10 @@ def check_grammar():
             "corrected": corrected_sentence
         })
     except Exception as e:
-        app.logger.error(f"Error occurred: {e}")
+        logger.error(f"Error occurred during grammar check: {e}")
         return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    logger.info(f"Starting server on port {port}...")
+    app.run(host="0.0.0.0", port=port, debug=False)
