@@ -28,4 +28,5 @@ COPY . .
 EXPOSE 5000
 
 # Run application with Gunicorn
-CMD ["python", "-m", "gunicorn", "-w", "2", "-t", "120", "Grammar:app", "-b", "0.0.0.0:5000"]
+
+CMD ["python", "-m", "gunicorn", "-w", "2", "-t", "300", "Grammar:app", "-b", "0.0.0.0:5000"]
