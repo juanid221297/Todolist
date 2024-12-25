@@ -7,7 +7,7 @@ CORS(app)  # Initialize CORS after the app is created
 
 gf = Gramformer(models=1)  # 1 for grammar correction model
 
-@app.route('/check_grammar', methods=['POST'])
+@app.route('/', methods=['POST'])
 def check_grammar():
     data = request.json
     sentence = data.get("sentence", "")
