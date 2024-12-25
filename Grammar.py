@@ -6,27 +6,26 @@ import atexit
 import os
 import signal
 
-app = Flask(__name__)  # Create the Flask app object
-CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS for all routes
+app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Load the Gramformer model globally during startup
-gf = Gramformer(models=1)  # Grammar correction model
+# Load Gramformer model during startup
+gf = Gramformer(models=1)
 
-# Function to clean up all active child processes
+# Cleanup function to terminate active child processes
 def cleanup_processes():
     for process in active_children():
         process.terminate()
         process.join()
 
-# Register the cleanup function to be called during application exit
+# Register cleanup function to be called during exit
 atexit.register(cleanup_processes)
 
-# Ensure termination signals are handled
+# Signal handlers for graceful termination
 def handle_exit_signal(signum, frame):
     cleanup_processes()
-    os._exit(0)  # Exit the application
+    os._exit(0)
 
-# Set signal handlers
 signal.signal(signal.SIGTERM, handle_exit_signal)
 signal.signal(signal.SIGINT, handle_exit_signal)
 
@@ -53,5 +52,5 @@ def check_grammar():
         return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Use PORT env variable if available, else default to 5000
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
