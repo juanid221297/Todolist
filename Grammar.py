@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
 from gramformer import Gramformer
 from flask_cors import CORS
-CORS(app)
-app = Flask(__name__)
+
+app = Flask(__name__)  # Create the Flask app object
+CORS(app)  # Initialize CORS after the app is created
+
 gf = Gramformer(models=1)  # 1 for grammar correction model
 
 @app.route('/check_grammar', methods=['POST'])
