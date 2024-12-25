@@ -12,7 +12,7 @@ WORKDIR /app
 
 # Copy and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 # Install SpaCy's English language model
 RUN python -m spacy download en_core_web_sm
@@ -23,5 +23,5 @@ COPY . .
 # Expose the port Flask will run on
 EXPOSE 5000
 
-# Use Gunicorn to run the application
-CMD ["gunicorn", "Grammar:app", "-b", "0.0.0.0:5000"]
+# Ensure gunicorn is in PATH and run the app
+CMD ["gunicorn", "Grammar:app", "-b", "0.0.0.0:5000", "-w", "2", "-t", "120"]
