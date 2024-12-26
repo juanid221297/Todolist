@@ -6,6 +6,7 @@ then
     echo "Docker could not be found, please install it."
     exit
 fi
+poetry install
 
 # Build the Docker image
 docker build -t grammar-checker .
