@@ -11,5 +11,6 @@ poetry install
 # Build the Docker image
 docker build -t grammar-checker .
 pip install -r requirements.txt
+poetry install
 # Run the Docker container
 docker run -p 5000:5000 grammar-checker
