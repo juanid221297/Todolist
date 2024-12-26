@@ -10,7 +10,7 @@ fi
 pip install -r requirements.txt
 
 poetry install
-
+pip install gunicorn
 # Build the Docker image
 docker build -t grammar-checker .
 poetry install
