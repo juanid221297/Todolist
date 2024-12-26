@@ -18,4 +18,4 @@ COPY . /app/
 EXPOSE 5000
 
 # Start the Flask app with gunicorn for production
-CMD ["poetry", "run", "gunicorn", "-w", "2", "-t", "1000", "Grammar:app", "-b", "0.0.0.0:5000"]
+CMD ["poetry", "run", "gunicorn", "-w", "2", "-t", "300", "Grammar:app", "-b", "0.0.0.0:5000"]
