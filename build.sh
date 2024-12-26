@@ -1,13 +1,14 @@
 #!/bin/bash
 
-# Exit immediately if any command fails
-set -e
+# Install Docker if not installed
+if ! command -v docker &> /dev/null
+then
+    echo "Docker could not be found, please install it."
+    exit
+fi
 
-# Install Python dependencies
-pip install --no-cache-dir -r requirements.txt
+# Build the Docker image
+docker build -t grammar-checker .
 
-# Install SpaCy language model
-python -m spacy download en_core_web_sm
-
-# Debugging: Print installed packages for verification
-pip list
+# Run the Docker container
+docker run -p 5000:5000 grammar-checker
