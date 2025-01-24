@@ -4,10 +4,12 @@ import torch
 from PIL import Image
 import io
 from flask_cors import CORS
+import os
 
 app = Flask(__name__)
 CORS(app)
 
+# Global variables for lazy loading
 model, feature_extractor, tokenizer, device = None, None, None, None
 
 def load_model():
@@ -15,21 +17,18 @@ def load_model():
     global model, feature_extractor, tokenizer, device
     if model is None:
         print("Loading model, tokenizer, and feature extractor...")
-        model = VisionEncoderDecoderModel.from_pretrained(
-            "nlpconnect/vit-gpt2-image-captioning"
-        )
-        feature_extractor = ViTImageProcessor.from_pretrained(
-            "nlpconnect/vit-gpt2-image-captioning"
-        )
-        tokenizer = AutoTokenizer.from_pretrained(
-            "nlpconnect/vit-gpt2-image-captioning"
-        )
+        # Load the model components
+        model = VisionEncoderDecoderModel.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
+        feature_extractor = ViTImageProcessor.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
+        tokenizer = AutoTokenizer.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
 
-        # Use half precision if supported and set device
+        # Set the device (GPU if available)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
+
+        # Use half precision on GPU for memory optimization
         if device.type == "cuda":
-            model.half()  # Use half precision on GPU for memory optimization
+            model.half()
         print("Model loaded successfully.")
 
 def predict_step(image, model, feature_extractor, tokenizer, device):
@@ -44,15 +43,21 @@ def predict_step(image, model, feature_extractor, tokenizer, device):
         if image.mode != "RGB":
             image = image.convert(mode="RGB")
 
+        # Convert the image into pixel values
         pixel_values = feature_extractor(images=[image], return_tensors="pt", padding=True).pixel_values
         pixel_values = pixel_values.to(device)
 
-        # Generate text
+        # Generate text from the pixel values
         output_ids = model.generate(pixel_values, **gen_kwargs)
         preds = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
         return preds[0].strip()
     except Exception as e:
         return f"Error processing the image: {e}"
+
+@app.route('/')
+def home():
+    """Default route for the API."""
+    return "Welcome to the Image-to-Text Captioning API!", 200
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -64,13 +69,13 @@ def predict():
         return jsonify({"error": "No selected file"}), 400
 
     try:
-        # Get the image from the request
+        # Read the image file
         image = file.read()
 
-        # Load the model lazily (only if needed)
+        # Load the model lazily
         load_model()
 
-        # Generate text from the image
+        # Generate a caption for the image
         caption = predict_step(image, model, feature_extractor, tokenizer, device)
         return jsonify({"caption": caption}), 200
 
@@ -78,4 +83,6 @@ def predict():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    # Use the PORT environment variable set by Render, default to 5000 for local testing
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
