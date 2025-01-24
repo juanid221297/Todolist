@@ -1,6 +1,6 @@
-import os
 from flask import Flask, request, jsonify
 from transformers import VisionEncoderDecoderModel, ViTImageProcessor, AutoTokenizer
+from huggingface_hub import hf_hub_download
 import torch
 from PIL import Image
 import io
@@ -9,27 +9,35 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# Lazy load model components
 model, feature_extractor, tokenizer, device = None, None, None, None
 
 def load_model():
-    """Preload the model, tokenizer, and feature extractor."""
+    """Lazy load the model, tokenizer, and feature extractor."""
     global model, feature_extractor, tokenizer, device
     if model is None:
-        print("Loading model...")
-        model = VisionEncoderDecoderModel.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
-        feature_extractor = ViTImageProcessor.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
-        tokenizer = AutoTokenizer.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
+        print("Loading model, tokenizer, and feature extractor...")
+
+        # Use `hf_hub_download` with `force_download=True` for robustness
+        model_path = hf_hub_download(repo_id="nlpconnect/vit-gpt2-image-captioning", 
+                                     filename="pytorch_model.bin", 
+                                     force_download=True)
+        tokenizer_path = hf_hub_download(repo_id="nlpconnect/vit-gpt2-image-captioning", 
+                                         filename="tokenizer_config.json", 
+                                         force_download=True)
+        feature_extractor_path = hf_hub_download(repo_id="nlpconnect/vit-gpt2-image-captioning", 
+                                                 filename="preprocessor_config.json", 
+                                                 force_download=True)
+
+        model = VisionEncoderDecoderModel.from_pretrained(model_path)
+        feature_extractor = ViTImageProcessor.from_pretrained(feature_extractor_path)
+        tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+
+        # Use half precision if supported and set device
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
         if device.type == "cuda":
-            model.half()
+            model.half()  # Use half precision on GPU for memory optimization
         print("Model loaded successfully.")
-
-@app.before_first_request
-def preload_model():
-    """Preload the model before handling the first request."""
-    load_model()
 
 def predict_step(image, model, feature_extractor, tokenizer, device):
     """Generate a caption for an image."""
@@ -42,19 +50,16 @@ def predict_step(image, model, feature_extractor, tokenizer, device):
         image = Image.open(io.BytesIO(image))
         if image.mode != "RGB":
             image = image.convert(mode="RGB")
+
         pixel_values = feature_extractor(images=[image], return_tensors="pt", padding=True).pixel_values
         pixel_values = pixel_values.to(device)
 
-        # Generate text from the image
+        # Generate text
         output_ids = model.generate(pixel_values, **gen_kwargs)
         preds = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
         return preds[0].strip()
     except Exception as e:
         return f"Error processing the image: {e}"
-
-@app.route('/')
-def home():
-    return "Welcome to the Image-to-Text Captioning API!"
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -66,15 +71,18 @@ def predict():
         return jsonify({"error": "No selected file"}), 400
 
     try:
+        # Get the image from the request
         image = file.read()
+
+        # Load the model lazily (only if needed)
+        load_model()
+
+        # Generate text from the image
         caption = predict_step(image, model, feature_extractor, tokenizer, device)
         return jsonify({"caption": caption}), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    # Increase Gunicorn timeout
-    os.environ["GUNICORN_CMD_ARGS"] = "--timeout 120"
-    
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
